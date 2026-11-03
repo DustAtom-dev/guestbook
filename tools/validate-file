@@ -18,9 +18,31 @@
 
 use strict;
 use warnings;
+use utf8;
 
 use Encode qw(decode FB_CROAK);
 use File::Basename qw(basename);
+use FindBin qw($RealBin);
+use open qw(:std :encoding(UTF-8));
+
+# load every "fully-qualified" emoji from `emoji-test.txt` into a hash
+sub load_emoji {
+	my ($path) = @_;
+	local $/ = "\n";
+	open my $efh, '<:encoding(UTF-8)', $path
+	    or fail("cannot read $path: $!");
+	my %set;
+	while (my $l = <$efh>) {
+		next if $l =~ /^\s*(?:#|$)/;
+		my ($cps, $status) = $l =~ /^([0-9A-F ]+?)\s*;\s*(\S+)/
+		    or next;
+		next unless $status eq 'fully-qualified';
+		$set{join '', map { chr hex } split ' ', $cps} = 1;
+	}
+	close $efh;
+	%set or fail("no emoji found in $path");
+	return \%set;
+}
 
 # get file argument
 if (@ARGV != 1) {
@@ -86,14 +108,11 @@ $have_login =~ /\A[A-Za-z0-9-]+\z/
 lc($have_login) eq $login
     or fail('username must match the lowercase filename (case-insensitive)');
 
-# ensure only 1 visible grapheme is contained in the "symbol"
-my @graphemes = $symbol =~ /\X/g;
-@graphemes == 1 && $graphemes[0] eq $symbol
-    or fail('the final item must be exactly one visible Unicode character');
-
-# ensure the visible grapheme is *not* a control character
-$symbol =~ /[^\p{Z}\p{C}]/
-    or fail('the final character cannot be whitespace or a control character');
+# ensure the whole symbol is exactly one RGI emoji (in emoji-test.txt).
+# this rejects '©', '®' (fake "text" emoji), digits, accented letters, etc.
+my $emoji = load_emoji("$RealBin/emoji-test.txt");
+exists $emoji->{$symbol}
+    or fail('the final item must be exactly one true emoji');
 
 # ok! at this point we are sure the file is valid (probably)
 print "OK: $file\n";
