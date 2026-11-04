@@ -8,6 +8,9 @@
 # they are hard to validate lol.  but, perl can do it.  well, it can actually
 # validate "1 visible grapheme" but that's good enough for me.
 #
+# Change (DustAtom): November 3, 2026:
+# Added strict "fully-qualified" emoji validation.
+#
 # # Created
 # Author: Dave Eddy <ysap@daveeddy.com>
 # Date: October 20, 2026
@@ -15,6 +18,7 @@
 #
 # # Contributors
 # - Dave Eddy <ysap@daveeddy.com>
+# - DustAtom <DustAtom.dev@proton.me>
 
 use strict;
 use warnings;
